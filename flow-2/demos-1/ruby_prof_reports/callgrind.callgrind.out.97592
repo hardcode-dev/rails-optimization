@@ -1,0 +1,422 @@
+events: wall_time
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=IO::^write
+0 453
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=String::to_s
+0 2478
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=String::encode
+0 8653
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Symbol::to_s
+0 2
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Hash::keys
+0 535
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=JSON/Ext/Generator/State::initialize_copy
+0 1
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Kernel::initialize_dup
+0 1
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=JSON/Ext/Generator/State::initialize_copy
+calls=1 146
+146 1
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Kernel::dup
+0 3
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Kernel::initialize_dup
+calls=1 146
+146 2
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=JSON/Ext/Generator/GeneratorMethods/Hash::to_json
+0 11037
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Kernel::dup
+calls=1 146
+146 5
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Hash::keys
+calls=2030 146
+146 535
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Symbol::to_s
+calls=1 146
+146 2
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::encode
+calls=33540 146
+146 8653
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::to_s
+calls=16228 146
+146 2478
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Date::iso8601
+0 7209
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::reverse
+0 424
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Date::<=>
+0 4016
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Integer::div
+0 2089
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=String::[]=
+0 3343
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=MatchData::end
+0 1859
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=MatchData::begin
+0 6927
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Regexp::match
+0 17498
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=String::gsub!
+0 7996
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Date::^parse
+0 31674
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::gsub!
+calls=11226 143
+143 7996
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Regexp::match
+calls=22452 143
+143 17498
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=MatchData::begin
+calls=11226 143
+143 6927
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=MatchData::end
+calls=11226 143
+143 1859
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::[]=
+calls=11226 143
+143 3343
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Integer::div
+calls=11226 143
+143 2089
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::any?
+0 4441
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::upcase
+calls=5939 133
+133 1316
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::max
+0 471
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Integer::to_s
+0 904
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::sum
+0 458
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=String::to_i
+0 4556
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Hash::merge
+0 7189
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+fn=Object::collect_stats_from_users
+39 11
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::each
+calls=7 39
+39 202924
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+fn=User::initialize
+12 1698
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Class::new
+0 4806
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+cfn=User::initialize
+calls=2028 105
+105 1698
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::select
+0 6335313
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::join
+0 1789
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::uniq
+0 663
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::sort
+0 7341
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Date::<=>
+calls=22904 143
+143 4016
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=String::upcase
+0 6852
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::map
+0 56031
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::upcase
+calls=11226 94
+94 2628
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::to_i
+calls=22452 123
+123 4556
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::upcase
+calls=11226 128
+128 2338
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Date::^parse
+calls=11226 143
+143 71386
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Date::iso8601
+calls=11226 143
+143 7209
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::all?
+0 195159
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::upcase
+calls=2623 138
+138 571
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::count
+0 357
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+fn=Object::parse_session
+28 22833
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::split
+calls=11226 28
+28 44775
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+fn=Object::parse_user
+18 3127
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::split
+calls=2028 18
+18 5575
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Array::each
+0 400089
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::split
+calls=13254 56
+56 40861
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+cfn=Object::parse_user
+calls=2028 57
+57 8703
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+cfn=Object::parse_session
+calls=11226 58
+58 67608
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::all?
+calls=11226 84
+84 192984
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::select
+calls=2028 104
+104 6335313
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Class::new
+calls=2028 105
+105 6504
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::count
+calls=2028 113
+113 352
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Hash::merge
+calls=14196 143
+143 7189
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::map
+calls=22308 143
+143 133925
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::sum
+calls=2028 118
+118 458
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Integer::to_s
+calls=4056 123
+123 904
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::max
+calls=2028 123
+123 471
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::sort
+calls=4056 143
+143 9369
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::join
+calls=2028 128
+128 1770
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::any?
+calls=2028 133
+133 5757
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::all?
+calls=2028 138
+138 2745
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::reverse
+calls=2028 143
+143 424
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=String::split
+0 95642
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=IO::^read
+0 438
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Object::*[]
+0 3
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=IO::write
+0 43
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=IO::puts
+0 4
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=IO::write
+calls=2 147
+147 43
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+fn=Kernel::puts
+0 4
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=IO::puts
+calls=2 147
+147 47
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+fn=Object::work
+47 145
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Kernel::puts
+calls=2 147
+147 51
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Object::*[]
+calls=1 49
+49 3
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=IO::^read
+calls=1 49
+49 438
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=String::split
+calls=1 49
+49 4430
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::each
+calls=3 102
+102 7012503
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::count
+calls=3 89
+89 5
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::map
+calls=2 91
+91 10222
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::sort
+calls=1 91
+91 1987
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::uniq
+calls=1 91
+91 663
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=Array::join
+calls=1 91
+91 19
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+cfn=Object::collect_stats_from_users
+calls=7 142
+142 202935
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=JSON/Ext/Generator/GeneratorMethods/Hash::to_json
+calls=1 146
+146 22709
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/ruby_runtime
+cfn=IO::^write
+calls=1 146
+146 453
+
+fl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/13-ruby-prof-callgrind.rb
+fn=[global]::[no method]
+10 40
+cfl=/Users/spajic/hardcode-dev/rails-optimization/flow-2/demos-1/work_method.rb
+cfn=Object::work
+calls=1 10
+10 7256563
+
