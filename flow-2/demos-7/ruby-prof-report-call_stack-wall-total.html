@@ -1,0 +1,819 @@
+<html><head>
+<meta http-equiv="content-type" content="text/html; charset=utf-8">
+<title>ruby-prof call tree</title>
+<style type="text/css">
+<!--
+  body {
+    font-size:70%;
+    padding:0;
+    margin:5px;
+    margin-right:0px;
+    margin-left:0px;
+    background: #ffffff;
+  }
+  ul {
+    margin-left:0px;
+    margin-top:0px;
+    margin-bottom:0px;
+    padding-left:0px;
+    list-style-type:none;
+  }
+  li {
+    margin-left:11px;
+    padding:0px;
+    white-space:nowrap;
+    border-top:1px solid #cccccc;
+    border-left:1px solid #cccccc;
+    border-bottom:none;
+  }
+  .thread {
+    margin-left:11px;
+    background:#708090;
+    padding-top:3px;
+    padding-left:12px;
+    padding-bottom:2px;
+    border-left:1px solid #CCCCCC;
+    border-top:1px solid #CCCCCC;
+    font-weight:bold;
+  }
+  .hidden {
+    display:none;
+    width:0px;
+    height:0px;
+    margin:0px;
+    padding:0px;
+    border-style:none;
+  }
+  .color01 { background:#adbdeb }
+  .color05 { background:#9daddb }
+  .color0 { background:#8d9dcb }
+  .color1 { background:#89bccb }
+  .color2 { background:#56e3e7 }
+  .color3 { background:#32cd70 }
+  .color4 { background:#a3d53c }
+  .color5 { background:#c4cb34 }
+  .color6 { background:#dcb66d }
+  .color7 { background:#cda59e }
+  .color8 { background:#be9d9c }
+  .color9 { background:#cf947a }
+  #commands {
+    font-size:10pt;
+    padding:10px;
+    margin-left:11px;
+    margin-bottom:0px;
+    margin-top:0px;
+    background:#708090;
+    border-top:1px solid #cccccc;
+    border-left:1px solid #cccccc;
+    border-bottom:none;
+  }
+  #titlebar {
+    font-size:10pt;
+    padding:10px;
+    margin-left:11px;
+    margin-bottom:0px;
+    margin-top:10px;
+    background:#8090a0;
+    border-top:1px solid #cccccc;
+    border-left:1px solid #cccccc;
+    border-bottom:none;
+  }
+  #help {
+    font-size:10pt;
+    padding:10px;
+    margin-left:11px;
+    margin-bottom:0px;
+    margin-top:0px;
+    background:#8090a0;
+    display:none;
+    border-top:1px solid #cccccc;
+    border-left:1px solid #cccccc;
+    border-bottom:none;
+  }
+  #sentinel {
+    height: 400px;
+    margin-left:11px;
+    background:#8090a0;
+    border-top:1px solid #cccccc;
+    border-left:1px solid #cccccc;
+    border-bottom:none;
+  }
+  input { margin-left:10px; }
+
+  .toggle {
+    background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABsAAAAJCAMAAAD0FKf3AAAAA3NCSVQICAjb4U/gAAAAb1BMVEX///98jcR8jMV4jMB7jcR7jcR8jcT////7/f/3/P/0+vzx+v7s9vzq9Pzm8Prk7vzi7fnj5/Pc5vTb5vbg5PHW4fHV3/XS3fLM1+3K1e/G0e3EzuzCzey8x+m8xuystuSqtt98jsR8jcR7jcQAAADWswcWAAAAJXRSTlMAVVVV3e7u////////////////////////////////////////Vv4VOQAAAAlwSFlzAAALEgAACxIB0t1+/AAAABx0RVh0U29mdHdhcmUAQWRvYmUgRmlyZXdvcmtzIENTNui8sowAAACVSURBVAiZPc/hDoIwDATgobCWgZsWgSGidOz9n9F1CPfrki+5tIqPXHSQVMVZFH8/sx/Is16X9zR2vtQPAMC6LxVnco5Dpvtt40QRGrspnueBqDUcdmrEMILtknkiQkQOU5RAsn9RPGRKNkLOxiibIEauNSYZy2CNyerGRngtsilkiLXP9Cx1bzuAZU13Himq/a3rWX4VVRPEuDWiLQAAAABJRU5ErkJggg==) no-repeat left center;
+    float:left;
+    width:9px;
+    height:9px;
+    margin:2px 1px 1px 1px;
+  }
+
+  .toggle.minus {
+    background-position: -9px 0;
+  }
+
+  .toggle.plus {
+    background-position: -18px 0;
+  }
+
+-->
+</style>
+<script type="text/javascript">
+  /*
+   Copyright (C) 2005,2009  Stefan Kaes
+   skaes@railsexpress.de
+   */
+
+  function rootNode() {
+    return currentThread;
+  }
+
+  function showUL(node, show) {
+    var lis = node.childNodes;
+    var l = lis.length;
+    for (var i=0; i < l ; i++ ) {
+      toggle(lis[i], show);
+    }
+  }
+
+  function findUlChild(li){
+    var ul = li.childNodes[2];
+    while (ul && ul.nodeName != "UL") {
+      ul = ul.nextSibling;
+    }
+    return ul;
+  }
+
+  function isLeafNode(li) {
+    var img = li.firstChild;
+    return (img.className.indexOf('empty') > -1);
+  }
+
+  function toggle(li, show) {
+    if (isLeafNode(li))
+      return;
+
+    var img = li.firstChild;
+    img.className = 'toggle ';
+    img.className += show ? 'minus' : 'plus';
+
+    var ul = findUlChild(li);
+    if (ul) {
+      ul.style.display = show ? 'block' : 'none';
+      showUL(ul, true);
+    }
+  }
+
+  function toggleLI(li) {
+    var img = li.firstChild;
+    if (img.className.indexOf("minus")>-1)
+      toggle(li, false);
+    else {
+      if (img.className.indexOf("plus")>-1)
+        toggle(li, true);
+    }
+  }
+
+  function aboveThreshold(text, threshold) {
+    var match = text.match(/\d+[.,]\d+/);
+    return (match && parseFloat(match[0].replace(/,/, '.'))>=threshold);
+  }
+
+  function setThresholdLI(li, threshold) {
+    var img = li.firstChild;
+    var text = img.nextSibling.firstChild;
+    var ul = findUlChild(li);
+
+    var visible = aboveThreshold(text.nodeValue, threshold) ? 1 : 0;
+
+    var count = 0;
+    if (ul) {
+      count = setThresholdUL(ul, threshold);
+    }
+    if (count>0) {
+      img.className = 'toggle minus';
+    }
+    else {
+      img.className = 'toggle empty';
+    }
+    if (visible) {
+      li.style.display = 'block'
+    }
+    else {
+      li.style.display = 'none'
+    }
+    return visible;
+  }
+
+  function setThresholdUL(node, threshold) {
+    var lis = node.childNodes;
+    var l = lis.length;
+
+    var count = 0;
+    for ( var i = 0; i < l ; i++ ) {
+      count = count + setThresholdLI(lis[i], threshold);
+    }
+
+    var visible = (count > 0) ? 1 : 0;
+    if (visible) {
+      node.style.display = 'block';
+    }
+    else {
+      node.style.display = 'none';
+    }
+    return visible;
+  }
+
+  function toggleChildren(img, event) {
+    event.cancelBubble=true;
+    if (img.className.indexOf('empty') > -1)
+      return;
+
+    var minus = (img.className.indexOf('minus') > -1);
+
+    if (minus) {
+      img.className = 'toggle plus';
+    }
+    else
+      img.className = 'toggle minus';
+
+    var li = img.parentNode;
+    var ul = findUlChild(li);
+    if (ul) {
+      if (minus)
+        ul.style.display = 'none';
+      else
+        ul.style.display = 'block';
+    }
+    if (minus)
+      moveSelectionIfNecessary(li);
+  }
+
+  function showChildren(li) {
+    var img = li.firstChild;
+    if (img.className.indexOf('empty') > -1)
+      return;
+    img.className = 'toggle minus';
+
+    var ul = findUlChild(li);
+    if (ul) {
+      ul.style.display = 'block';
+    }
+  }
+
+  function setThreshold() {
+    var tv = document.getElementById("threshold").value;
+    if (tv.match(/[0-9]+([.,][0-9]+)?/)) {
+      var f = parseFloat(tv.replace(/,/, '.'));
+      var threads = document.getElementsByName("thread");
+      var l = threads.length;
+      for ( var i = 0; i < l ; i++ ) {
+        setThresholdUL(threads[i], f);
+      }
+      var p = selectedNode;
+      while (p && p.style.display=='none')
+        p=p.parentNode.parentNode;
+      if (p && p.nodeName=="LI")
+        selectNode(p);
+    }
+    else {
+      alert("Please specify a decimal number as threshold value!");
+    }
+  }
+
+  function expandAll(event) {
+    toggleAll(event, true);
+  }
+
+  function collapseAll(event) {
+    toggleAll(event, false);
+    selectNode(rootNode(), null);
+  }
+
+  function toggleAll(event, show) {
+    event.cancelBubble=true;
+    var threads = document.getElementsByName("thread");
+    var l = threads.length;
+    for ( var i = 0; i < l ; i++ ) {
+      showUL(threads[i], show);
+    }
+  }
+
+  function toggleHelp(node) {
+    var help = document.getElementById("help");
+    if (node.value == "Show Help") {
+      node.value = "Hide Help";
+      help.style.display = 'block';
+    }
+    else {
+      node.value = "Show Help";
+      help.style.display = 'none';
+    }
+  }
+
+  var selectedNode = null;
+  var selectedColor = null;
+  var selectedThread = null;
+
+  function descendentOf(a,b){
+    while (a!=b && b!=null)
+      b=b.parentNode;
+    return (a==b);
+  }
+
+  function moveSelectionIfNecessary(node){
+    if (descendentOf(node, selectedNode))
+      selectNode(node, null);
+  }
+
+  function selectNode(node, event) {
+    if (event) {
+      event.cancelBubble = true;
+      thread = findThread(node);
+      selectThread(thread);
+    }
+    if (selectedNode) {
+      selectedNode.style.background = selectedColor;
+    }
+    selectedNode = node;
+    selectedColor = node.style.background;
+    selectedNode.style.background = "red";
+    selectedNode.scrollIntoView();
+    window.scrollBy(0,-400);
+  }
+
+  function moveUp(){
+    move(selectedNode.previousSibling);
+  }
+
+  function moveDown(){
+    move(selectedNode.nextSibling);
+  }
+
+  function move(p) {
+    while (p && p.style.display == 'none')
+      p = p.nextSibling;
+    if (p && p.nodeName == "LI") {
+      selectNode(p, null);
+    }
+  }
+
+  function moveLeft(){
+    var p = selectedNode.parentNode.parentNode;
+    if (p && p.nodeName=="LI") {
+      selectNode(p, null);
+    }
+  }
+
+  function moveRight(){
+    if (!isLeafNode(selectedNode)) {
+      showChildren(selectedNode);
+      var ul = findUlChild(selectedNode);
+      if (ul) {
+        selectNode(ul.firstChild, null);
+      }
+    }
+  }
+
+  function moveForward(){
+    if (isLeafNode(selectedNode)) {
+      var p = selectedNode;
+      while ((p.nextSibling == null || p.nextSibling.style.display=='none') && p.nodeName=="LI") {
+        p = p.parentNode.parentNode;
+      }
+      if (p.nodeName=="LI")
+        selectNode(p.nextSibling, null);
+    }
+    else {
+      moveRight();
+    }
+  }
+
+  function isExpandedNode(li){
+    var img = li.firstChild;
+    return(img.className.indexOf('minus')>-1);
+  }
+
+  function moveBackward(){
+    var p = selectedNode;
+    var q = p.previousSibling;
+    while (q != null && q.style.display=='none')
+      q = q.previousSibling;
+    if (q == null) {
+      p = p.parentNode.parentNode;
+    } else {
+      while (!isLeafNode(q) && isExpandedNode(q)) {
+        q = findUlChild(q).lastChild;
+        while (q.style.display=='none')
+          q = q.previousSibling;
+      }
+      p = q;
+    }
+    if (p.nodeName=="LI")
+      selectNode(p, null);
+  }
+
+  function moveHome() {
+    selectNode(currentThread);
+  }
+
+  var currentThreadIndex = null;
+
+  function findThread(node){
+    while (node && !node.parentNode.nodeName.match(/BODY|DIV/g)) {
+      node = node.parentNode;
+    }
+    return node.firstChild;
+  }
+
+  function selectThread(node){
+    var threads = document.getElementsByName("thread");
+    currentThread = node;
+    for (var i=0; i<threads.length; i++) {
+      if (threads[i]==currentThread.parentNode)
+        currentThreadIndex = i;
+    }
+  }
+
+  function nextThread(){
+    var threads = document.getElementsByName("thread");
+    if (currentThreadIndex==threads.length-1)
+      currentThreadIndex = 0;
+    else
+      currentThreadIndex += 1
+    currentThread = threads[currentThreadIndex].firstChild;
+    selectNode(currentThread, null);
+  }
+
+  function previousThread(){
+    var threads = document.getElementsByName("thread");
+    if (currentThreadIndex==0)
+      currentThreadIndex = threads.length-1;
+    else
+      currentThreadIndex -= 1
+    currentThread = threads[currentThreadIndex].firstChild;
+    selectNode(currentThread, null);
+  }
+
+  function switchThread(node, event){
+    event.cancelBubble = true;
+    selectThread(node.nextSibling.firstChild);
+    selectNode(currentThread, null);
+  }
+
+  function handleKeyEvent(event){
+    var code = event.charCode ? event.charCode : event.keyCode;
+    var str = String.fromCharCode(code);
+    switch (str) {
+      case "a": moveLeft();  break;
+      case "s": moveDown();  break;
+      case "d": moveRight(); break;
+      case "w": moveUp();    break;
+      case "f": moveForward(); break;
+      case "b": moveBackward(); break;
+      case "x": toggleChildren(selectedNode.firstChild, event); break;
+      case "*": toggleLI(selectedNode); break;
+      case "n": nextThread(); break;
+      case "h": moveHome(); break;
+      case "p": previousThread(); break;
+    }
+  }
+  document.onkeypress=function(event){ handleKeyEvent(event) };
+
+  window.onload=function(){
+    var images = document.querySelectorAll(".toggle");
+    for (var i=0; i<images.length; i++) {
+      var img = images[i];
+        img.onclick = function(event){ toggleChildren(this, event); return false; };
+    }
+    var divs = document.getElementsByTagName("div");
+    for (i=0; i<divs.length; i++) {
+      var div = divs[i];
+      if (div.className == "thread")
+        div.onclick = function(event){ switchThread(this, event) };
+    }
+    var lis = document.getElementsByTagName("li");
+    for (var i=0; i<lis.length; i++) {
+      lis[i].onclick = function(event){ selectNode(this, event); };
+    }
+    var threads = document.getElementsByName("thread");;
+    currentThreadIndex = 0;
+    currentThread = threads[0].firstChild;
+    selectNode(currentThread, null);
+  };
+
+</script>
+</head><body><div style="display: inline-block;">
+<div id="titlebar">
+Call tree for application <b>./bin/rspec </b><br/>
+Generated on 2019-04-25 00:13:10 +0300 with options {:min_percent=&gt;1}<br/>
+</div>
+<div id="commands">
+<span style="font-size: 11pt; font-weight: bold;">Threshold:</span>
+<input value="1.0" size="3" id="threshold" type="text">
+<input value="Apply" onclick="setThreshold();" type="submit">
+<input value="Expand All" onclick="expandAll(event);" type="submit">
+<input value="Collapse All" onclick="collapseAll(event);" type="submit">
+<input value="Show Help" onclick="toggleHelp(this);" type="submit">
+</div>
+<div style="display: none;" id="help">
+&#8226; Enter a decimal value <i>d</i> into the threshold field and click "Apply"
+        to hide all nodes marked with time values lower than <i>d</i>.<br>
+&#8226; Click on "Expand All" for full tree expansion.<br>
+&#8226; Click on "Collapse All" to show only top level nodes.<br>
+&#8226; Use a, s, d, w as in Quake or Urban Terror to navigate the tree.<br>
+&#8226; Use f and b to navigate the tree in preorder forward and backwards.<br>
+&#8226; Use x to toggle visibility of a subtree.<br>
+&#8226; Use * to expand/collapse a whole subtree.<br>
+&#8226; Use h to navigate to thread root.<br>
+&#8226; Use n and p to navigate between threads.<br>
+&#8226; Click on background to move focus to a subtree.<br>
+</div>
+<div class="thread">Thread: 70259587661780, Fiber: 0 (100.00% ~ 7.425429105758667)</div><ul name="thread"><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 99.44% (99.44%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/test-prof-0.8.0/lib/test_prof.rb&line=164">[global]#[no method]</a> [1 calls, 3 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 99.44% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/application.rb&line=352">Rails::Application#initialize!</a> [1 calls, 1 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 99.44% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=57">Rails::Initializable#run_initializers</a> [1 calls, 1 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 99.38% (99.94%) Method#call [1 calls, 2726 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 99.38% (100.00%) Rails::Initializable::Collection#each [1 calls, 1 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 97.65% (98.26%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=30">Rails::Initializable::Initializer#run</a> [10 calls, 336 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 95.41% (97.70%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=30">Rails::Initializable::Initializer#run</a> [102 calls, 336 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 94.48% (99.03%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=30">Rails::Initializable::Initializer#run</a> [9 calls, 336 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 94.47% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/engine.rb&line=504">Rails::Application#app</a> [1 calls, 1 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 94.25% (99.77%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=30">Rails::Initializable::Initializer#run</a> [5 calls, 336 total]</span>
+<ul><li class="color9" style="display:block"><a href="#" class="toggle minus" ></a><span> 94.03% (99.77%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/lazy_load_hooks.rb&line=48">ActiveSupport::LazyLoadHooks#run_load_hooks</a> [1 calls, 97 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (76.37%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/migration.rb&line=594">&lt;Class::ActiveRecord::Migration&gt;#maintain_test_schema!</a> [1 calls, 1 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/migration.rb&line=600">&lt;Class::ActiveRecord::Migration&gt;#method_missing</a> [1 calls, 1 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/migration.rb&line=825">ActiveRecord::Migration#suppress_messages</a> [1 calls, 1 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/migration.rb&line=580">&lt;Class::ActiveRecord::Migration&gt;#load_schema_if_pending!</a> [1 calls, 1 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_handling.rb&line=88">ActiveRecord::ConnectionHandling#connection</a> [1 calls, 7 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_handling.rb&line=116">ActiveRecord::ConnectionHandling#retrieve_connection</a> [1 calls, 7 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/connection_pool.rb&line=929">ActiveRecord::ConnectionAdapters::ConnectionHandler#retrieve_connection</a> [1 calls, 7 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/connection_pool.rb&line=374">ActiveRecord::ConnectionAdapters::ConnectionPool#connection</a> [1 calls, 7 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/connection_pool.rb&line=500">ActiveRecord::ConnectionAdapters::ConnectionPool#checkout</a> [1 calls, 1 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/connection_pool.rb&line=743">ActiveRecord::ConnectionAdapters::ConnectionPool#acquire_connection</a> [1 calls, 1 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/connection_pool.rb&line=773">ActiveRecord::ConnectionAdapters::ConnectionPool#try_to_checkout_new_connection</a> [1 calls, 1 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 71.81% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/connection_pool.rb&line=802">ActiveRecord::ConnectionAdapters::ConnectionPool#checkout_new_connection</a> [1 calls, 1 total]</span>
+<ul><li class="color7" style="display:block"><a href="#" class="toggle minus" ></a><span> 70.20% (97.76%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/configuration.rb&line=2034">RSpec::Core::Configuration#load_file_handling_errors</a> [49 calls, 254 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.70% (55.13%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/configuration.rb&line=2057">RSpec::Core::Configuration#run_suite_hooks</a> [1 calls, 2 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.68% (99.95%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/database_cleaner-1.7.0/lib/database_cleaner/configuration.rb&line=91">&lt;Module::DatabaseCleaner&gt;#clean_with</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.65% (99.91%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/database_cleaner-1.7.0/lib/database_cleaner/base.rb&line=45">DatabaseCleaner::Base#clean_with</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.37% (99.28%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/database_cleaner-1.7.0/lib/database_cleaner/active_record/truncation.rb&line=234">DatabaseCleaner::ActiveRecord::Truncation#clean</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.37% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/postgresql/referential_integrity.rb&line=10">ActiveRecord::ConnectionAdapters::PostgreSQL::ReferentialIntegrity#disable_referential_integrity</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.01% (99.07%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/database_statements.rb&line=229">ActiveRecord::ConnectionAdapters::DatabaseStatements#transaction</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.01% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/transaction.rb&line=191">ActiveRecord::ConnectionAdapters::TransactionManager#within_new_transaction</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.01% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/2.6.0/monitor.rb&line=228">MonitorMixin#mon_synchronize</a> [1 calls, 410 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 38.01% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/transaction.rb&line=152">ActiveRecord::ConnectionAdapters::TransactionManager#begin_transaction</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.26% (95.40%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/database_cleaner-1.7.0/lib/database_cleaner/active_record/truncation.rb&line=247">DatabaseCleaner::ActiveRecord::Truncation#tables_to_truncate</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.26% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/database_cleaner-1.7.0/lib/database_cleaner/active_record/truncation.rb&line=165">DatabaseCleaner::ConnectionAdapters::PostgreSQLAdapter#database_cleaner_table_cache</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.23% (99.90%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/database_cleaner-1.7.0/lib/database_cleaner/active_record/truncation.rb&line=25">DatabaseCleaner::ConnectionAdapters::AbstractAdapter#database_cleaner_view_cache</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.20% (99.92%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/database_cleaner-1.7.0/lib/database_cleaner/active_record/truncation.rb&line=150">DatabaseCleaner::ConnectionAdapters::PostgreSQLAdapter#truncate_tables</a> [1 calls, 1 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.19% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/postgresql/database_statements.rb&line=71">ActiveRecord::ConnectionAdapters::PostgreSQL::DatabaseStatements#execute</a> [1 calls, 9 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.19% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract_adapter.rb&line=604">ActiveRecord::ConnectionAdapters::AbstractAdapter#log</a> [1 calls, 19 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.19% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/notifications/instrumenter.rb&line=19">ActiveSupport::Notifications::Instrumenter#instrument</a> [1 calls, 20 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.19% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/2.6.0/monitor.rb&line=228">MonitorMixin#mon_synchronize</a> [1 calls, 410 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.19% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies/interlock.rb&line=45">ActiveSupport::Dependencies::Interlock#permit_concurrent_loads</a> [1 calls, 19 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 36.19% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/concurrency/share_lock.rb&line=170">ActiveSupport::Concurrency::ShareLock#yield_shares</a> [1 calls, 19 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle empty" ></a><span> 36.19% (100.00%) PG::Connection#async_exec [1 calls, 20 total]</span>
+<ul></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.74% (4.58%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/schema_statements.rb&line=51">ActiveRecord::ConnectionAdapters::SchemaStatements#tables</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.71% (98.46%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/postgresql/database_statements.rb&line=71">ActiveRecord::ConnectionAdapters::PostgreSQL::DatabaseStatements#execute</a> [1 calls, 9 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.66% (96.81%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/transaction.rb&line=168">ActiveRecord::ConnectionAdapters::TransactionManager#commit_transaction</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.66% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/2.6.0/monitor.rb&line=228">MonitorMixin#mon_synchronize</a> [1 calls, 410 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.66% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract/transaction.rb&line=140">ActiveRecord::ConnectionAdapters::RealTransaction#commit</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.66% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/postgresql/database_statements.rb&line=141">ActiveRecord::ConnectionAdapters::PostgreSQL::DatabaseStatements#commit_db_transaction</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.66% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/postgresql/database_statements.rb&line=71">ActiveRecord::ConnectionAdapters::PostgreSQL::DatabaseStatements#execute</a> [1 calls, 9 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.66% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/connection_adapters/abstract_adapter.rb&line=604">ActiveRecord::ConnectionAdapters::AbstractAdapter#log</a> [1 calls, 19 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.66% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/notifications/instrumenter.rb&line=19">ActiveSupport::Notifications::Instrumenter#instrument</a> [1 calls, 20 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.65% (99.75%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/2.6.0/monitor.rb&line=228">MonitorMixin#mon_synchronize</a> [1 calls, 410 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.65% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies/interlock.rb&line=45">ActiveSupport::Dependencies::Interlock#permit_concurrent_loads</a> [1 calls, 19 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.65% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/concurrency/share_lock.rb&line=170">ActiveSupport::Concurrency::ShareLock#yield_shares</a> [1 calls, 19 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.65% (99.94%) PG::Connection#async_exec [1 calls, 20 total]</span>
+</li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 31.42% (44.76%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=285">ActiveSupport::Dependencies::Loadable#load</a> [49 calls, 332 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 30.53% (97.18%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [49 calls, 1801 total]</span>
+<ul><li class="color3" style="display:block"><a href="#" class="toggle minus" ></a><span> 30.53% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=53">Kernel#load</a> [49 calls, 664 total]</span>
+<ul><li class="color2" style="display:block"><a href="#" class="toggle minus" ></a><span> 27.32% (89.50%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/configuration.rb&line=2034">RSpec::Core::Configuration#load_file_handling_errors</a> [205 calls, 254 total]</span>
+<ul><li class="color2" style="display:block"><a href="#" class="toggle minus" ></a><span> 27.32% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=285">ActiveSupport::Dependencies::Loadable#load</a> [205 calls, 332 total]</span>
+<ul><li class="color2" style="display:block"><a href="#" class="toggle minus" ></a><span> 27.31% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [205 calls, 1801 total]</span>
+<ul><li class="color2" style="display:block"><a href="#" class="toggle minus" ></a><span> 27.30% (99.95%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=53">Kernel#load</a> [205 calls, 664 total]</span>
+<ul><li class="color2" style="display:block"><a href="#" class="toggle minus" ></a><span> 27.28% (99.92%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=53">Kernel#load</a> [205 calls, 664 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 14.38% (52.71%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/dsl.rb&line=42">&lt;Module::RSpec&gt;#describe</a> [204 calls, 249 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 14.35% (99.80%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=236">&lt;Class::RSpec::Core::ExampleGroup&gt;#describe</a> [204 calls, 552 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 14.31% (99.70%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=385">&lt;Class::RSpec::Core::ExampleGroup&gt;#subclass</a> [204 calls, 836 total]</span>
+<ul><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.16% (57.01%) Module#module_exec [204 calls, 845 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.97% (48.64%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=236">&lt;Class::RSpec::Core::ExampleGroup&gt;#describe</a> [260 calls, 552 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.93% (98.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=385">&lt;Class::RSpec::Core::ExampleGroup&gt;#subclass</a> [260 calls, 836 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.55% (64.97%) Module#module_exec [260 calls, 845 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.35% (52.90%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=236">&lt;Class::RSpec::Core::ExampleGroup&gt;#context</a> [139 calls, 282 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.33% (98.56%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=385">&lt;Class::RSpec::Core::ExampleGroup&gt;#subclass</a> [139 calls, 836 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.29% (32.81%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=408">&lt;Class::RSpec::Core::ExampleGroup&gt;#set_it_up</a> [260 calls, 836 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.32% (28.47%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/pundit-2.0.1/lib/pundit/rspec.rb&line=58">Pundit::RSpec::DSL#permissions</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.28% (98.06%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/core_ext/array/conversions.rb&line=60">Array#to_sentence</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.28% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n.rb&line=180">I18n::Base#translate</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (99.86%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n.rb&line=325">I18n::Base#enforce_available_locales!</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n.rb&line=320">I18n::Base#locale_available?</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/config.rb&line=51">I18n::Config#available_locales_set</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (99.90%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/config.rb&line=44">I18n::Config#available_locales</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/backend/simple.rb&line=52">I18n::Backend::Simple::Implementation#available_locales</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (99.95%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/backend/simple.rb&line=82">I18n::Backend::Simple::Implementation#init_translations</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/backend/base.rb&line=17">I18n::Backend::Base#load_translations</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (99.88%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/backend/base.rb&line=223">I18n::Backend::Base#load_file</a> [220 calls, 220 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.94% (85.74%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/backend/simple.rb&line=38">I18n::Backend::Simple::Implementation#store_translations</a> [220 calls, 220 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.90% (97.68%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/core_ext/hash.rb&line=15">#&lt;Module:0x00007fcd2dcf2040&gt;#deep_symbolize_keys</a> [220 calls, 1365 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.89% (99.35%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/core_ext/hash.rb&line=36">#&lt;Module:0x00007fcd2dcf2040&gt;#deep_symbolize_keys_in_object</a> [234 calls, 100640 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.88% (99.80%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/core_ext/hash.rb&line=15">#&lt;Module:0x00007fcd2dcf2040&gt;#deep_symbolize_keys</a> [232 calls, 1365 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.86% (98.93%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/core_ext/hash.rb&line=36">#&lt;Module:0x00007fcd2dcf2040&gt;#deep_symbolize_keys_in_object</a> [607 calls, 100640 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.85% (99.14%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/core_ext/hash.rb&line=15">#&lt;Module:0x00007fcd2dcf2040&gt;#deep_symbolize_keys</a> [583 calls, 1365 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.78% (96.51%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/core_ext/hash.rb&line=36">#&lt;Module:0x00007fcd2dcf2040&gt;#deep_symbolize_keys_in_object</a> [2107 calls, 100640 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.27% (71.02%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/i18n-1.6.0/lib/i18n/core_ext/hash.rb&line=36">#&lt;Module:0x00007fcd2dcf2040&gt;#deep_symbolize_keys_in_object</a> [89018 calls, 100640 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.18% (14.51%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=236">&lt;Class::RSpec::Core::ExampleGroup&gt;#context</a> [74 calls, 282 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.17% (98.83%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=385">&lt;Class::RSpec::Core::ExampleGroup&gt;#subclass</a> [74 calls, 836 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 6.10% (42.63%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=408">&lt;Class::RSpec::Core::ExampleGroup&gt;#set_it_up</a> [204 calls, 836 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 5.25% (86.01%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/configuration.rb&line=1488">RSpec::Core::Configuration#configure_group</a> [204 calls, 836 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 4.96% (94.49%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/configuration.rb&line=2220">RSpec::Core::Configuration#configure_group_with</a> [612 calls, 2508 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.80% (76.71%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/configuration.rb&line=2259">RSpec::Core::Configuration#safe_include</a> [3389 calls, 14372 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.75% (98.60%) Module#include [2952 calls, 10055 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.59% (95.88%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/concern.rb&line=112">ActiveSupport::Concern#append_features</a> [529 calls, 4154 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.22% (61.88%) Module#include [1298 calls, 10055 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.17% (97.67%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/concern.rb&line=112">ActiveSupport::Concern#append_features</a> [1298 calls, 4154 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.98% (91.00%) Module#class_eval [897 calls, 8208 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.30% (36.28%) Module#class_eval [491 calls, 8208 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.10% (22.17%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/metadata_filter.rb&line=190">RSpec::Core::FilterableItemRepository::QueryOptimized#items_for</a> [612 calls, 5370 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.53% (42.26%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=201">ActiveSupport::Dependencies::ModuleConstMissing#const_missing</a> [95 calls, 149 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.52% (99.94%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/active_support.rb&line=59">Bootsnap::LoadPathCache::CoreExt::ActiveSupport::ClassMethods#load_missing_constant</a> [95 calls, 149 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.52% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/active_support.rb&line=14">&lt;Module::Bootsnap::LoadPathCache::CoreExt::ActiveSupport&gt;#allow_bootsnap_retry</a> [95 calls, 329 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.51% (99.92%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=495">ActiveSupport::Dependencies#load_missing_constant</a> [95 calls, 151 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.37% (98.79%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/active_support.rb&line=47">Bootsnap::LoadPathCache::CoreExt::ActiveSupport::ClassMethods#require_or_load</a> [90 calls, 180 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.37% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/active_support.rb&line=14">&lt;Module::Bootsnap::LoadPathCache::CoreExt::ActiveSupport&gt;#allow_bootsnap_retry</a> [90 calls, 329 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.36% (99.93%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=353">ActiveSupport::Dependencies#require_or_load</a> [90 calls, 180 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.35% (99.91%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=36">&lt;Module::ActiveSupport::Dependencies&gt;#load_interlock</a> [90 calls, 171 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.35% (99.97%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies/interlock.rb&line=11">ActiveSupport::Dependencies::Interlock#loading</a> [90 calls, 171 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.35% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/concurrency/share_lock.rb&line=147">ActiveSupport::Concurrency::ShareLock#exclusive</a> [90 calls, 171 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.28% (99.40%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [90 calls, 1471 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.28% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [90 calls, 1801 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.27% (99.97%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [90 calls, 2297 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.26% (99.90%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [90 calls, 827 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.26% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [90 calls, 830 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.24% (99.86%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [90 calls, 2297 total]</span>
+<ul><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.02% (80.25%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [9 calls, 1471 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.02% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [9 calls, 1801 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.02% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [9 calls, 2297 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.02% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [3 calls, 827 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.02% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [3 calls, 830 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.02% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [3 calls, 2297 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.96% (99.35%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [12 calls, 1471 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.96% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [12 calls, 1801 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.96% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [12 calls, 2297 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.96% (99.96%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [12 calls, 827 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.96% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [12 calls, 830 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.95% (99.97%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [12 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.71% (41.45%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=45">Kernel#require_relative</a> [20 calls, 82 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.68% (99.06%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [20 calls, 1471 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.68% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [20 calls, 1801 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.67% (99.96%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [20 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.67% (99.92%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [15 calls, 827 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.67% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [15 calls, 830 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.67% (99.90%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [15 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.18% (32.07%) Module#include [34 calls, 10055 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 2.13% (23.81%) Module#include [87 calls, 10055 total]</span>
+<ul style="display:none"></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.82% (20.32%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [12 calls, 1471 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.82% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [12 calls, 1801 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.82% (99.96%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [12 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.82% (99.88%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [5 calls, 827 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.82% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [5 calls, 830 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.81% (99.92%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [5 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.20% (65.87%) Module#include [22 calls, 10055 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.18% (99.16%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/2.6.0/rss/dublincore.rb&line=12">RSS::BaseDublinCoreModel#append_features</a> [6 calls, 12 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.18% (10.40%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=53">Kernel#load</a> [49 calls, 664 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.31% (41.40%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/dsl.rb&line=42">&lt;Module::RSpec&gt;#describe</a> [24 calls, 249 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.31% (99.74%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=236">&lt;Class::RSpec::Core::ExampleGroup&gt;#describe</a> [24 calls, 552 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.31% (99.59%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/rspec-core-3.8.0/lib/rspec/core/example_group.rb&line=385">&lt;Class::RSpec::Core::ExampleGroup&gt;#subclass</a> [24 calls, 836 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.32% (1.83%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/migration.rb&line=1043">&lt;Class::ActiveRecord::Migrator&gt;#needs_migration?</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.16% (87.89%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activerecord-5.1.6.2/lib/active_record/migration.rb&line=1031">&lt;Class::ActiveRecord::Migrator&gt;#get_all_versions</a> [1 calls, 1 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color2" style="display:block"><a href="#" class="toggle minus" ></a><span> 20.23% (21.52%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/lazy_load_hooks.rb&line=65">ActiveSupport::LazyLoadHooks#execute_hook</a> [3 calls, 269 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 19.89% (98.28%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/lazy_load_hooks.rb&line=65">ActiveSupport::LazyLoadHooks#execute_hook</a> [3 calls, 269 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.06% (55.61%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/lazy_load_hooks.rb&line=65">ActiveSupport::LazyLoadHooks#execute_hook</a> [5 calls, 269 total]</span>
+<ul><li class="color1" style="display:block"><a href="#" class="toggle minus" ></a><span> 11.06% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/lazy_load_hooks.rb&line=57">ActiveSupport::LazyLoadHooks#with_execution_control</a> [5 calls, 269 total]</span>
+<ul><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.93% (89.80%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/application.rb&line=164">Rails::Application#reload_routes!</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.93% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/application/routes_reloader.rb&line=17">Rails::Application::RoutesReloader#reload!</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.90% (99.64%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/application/routes_reloader.rb&line=55">Rails::Application::RoutesReloader#load_paths</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.84% (99.44%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=285">ActiveSupport::Dependencies::Loadable#load</a> [1 calls, 332 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.40% (95.52%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [1 calls, 1801 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.40% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=53">Kernel#load</a> [1 calls, 664 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.40% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=53">Kernel#load</a> [1 calls, 664 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.38% (99.75%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/route_set.rb&line=417">ActionDispatch::Routing::RouteSet#draw</a> [1 calls, 10 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 9.38% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/route_set.rb&line=432">ActionDispatch::Routing::RouteSet#eval_block</a> [1 calls, 13 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.92% (41.81%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1544">ActionDispatch::Routing::Mapper::Resources#namespace</a> [4 calls, 8 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.92% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=926">ActionDispatch::Routing::Mapper::Scoping#namespace</a> [4 calls, 8 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.92% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1820">ActionDispatch::Routing::Mapper::Resources#path_scope</a> [4 calls, 422 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.92% (99.97%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=822">ActionDispatch::Routing::Mapper::Scoping#scope</a> [4 calls, 26 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.32% (84.76%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1430">ActionDispatch::Routing::Mapper::Resources#resources</a> [33 calls, 158 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.31% (99.57%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1700">ActionDispatch::Routing::Mapper::Resources#with_scope_level</a> [33 calls, 578 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.29% (99.50%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1707">ActionDispatch::Routing::Mapper::Resources#resource_scope</a> [33 calls, 164 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.29% (99.92%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=881">ActionDispatch::Routing::Mapper::Scoping#controller</a> [33 calls, 164 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.93% (58.67%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1804">ActionDispatch::Routing::Mapper::Resources#set_member_mappings_for_resource</a> [33 calls, 164 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.93% (99.97%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1495">ActionDispatch::Routing::Mapper::Resources#member</a> [33 calls, 178 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.93% (99.93%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1700">ActionDispatch::Routing::Mapper::Resources#with_scope_level</a> [33 calls, 578 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.91% (99.10%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1820">ActionDispatch::Routing::Mapper::Resources#path_scope</a> [33 calls, 422 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.65% (28.22%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/devise-4.6.1/lib/devise/rails/routes.rb&line=227">ActionDispatch::Routing::Mapper#devise_for</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.30% (86.79%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/devise-4.6.1/lib/devise.rb&line=350">&lt;Module::Devise&gt;#add_mapping</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.29% (99.73%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/devise-4.6.1/lib/devise/mapping.rb&line=55">Devise::Mapping#initialize</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (98.54%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/devise-4.6.1/lib/devise/mapping.rb&line=155">Devise::Mapping#default_used_route</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/devise-4.6.1/lib/devise/mapping.rb&line=95">Devise::Mapping#routes</a> [1 calls, 4 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/devise-4.6.1/lib/devise/mapping.rb&line=78">Devise::Mapping#modules</a> [1 calls, 5 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/devise-4.6.1/lib/devise/mapping.rb&line=83">Devise::Mapping#to</a> [2 calls, 8 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/devise-4.6.1/lib/devise.rb&line=320">Devise::Getter#get</a> [2 calls, 8 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=614">ActiveSupport::Dependencies#constantize</a> [2 calls, 8 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=582">ActiveSupport::Dependencies::ClassCache#get</a> [2 calls, 8 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/inflector/methods.rb&line=259">ActiveSupport::Inflector#constantize</a> [1 calls, 179 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (99.99%) Module#const_get [1 calls, 2373 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=201">ActiveSupport::Dependencies::ModuleConstMissing#const_missing</a> [1 calls, 149 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/active_support.rb&line=59">Bootsnap::LoadPathCache::CoreExt::ActiveSupport::ClassMethods#load_missing_constant</a> [1 calls, 149 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.26% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/active_support.rb&line=14">&lt;Module::Bootsnap::LoadPathCache::CoreExt::ActiveSupport&gt;#allow_bootsnap_retry</a> [1 calls, 329 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=495">ActiveSupport::Dependencies#load_missing_constant</a> [1 calls, 151 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (99.93%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/active_support.rb&line=47">Bootsnap::LoadPathCache::CoreExt::ActiveSupport::ClassMethods#require_or_load</a> [1 calls, 180 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/active_support.rb&line=14">&lt;Module::Bootsnap::LoadPathCache::CoreExt::ActiveSupport&gt;#allow_bootsnap_retry</a> [1 calls, 329 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=353">ActiveSupport::Dependencies#require_or_load</a> [1 calls, 180 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=36">&lt;Module::ActiveSupport::Dependencies&gt;#load_interlock</a> [1 calls, 171 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies/interlock.rb&line=11">ActiveSupport::Dependencies::Interlock#loading</a> [1 calls, 171 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/concurrency/share_lock.rb&line=147">ActiveSupport::Concurrency::ShareLock#exclusive</a> [1 calls, 171 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (99.94%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [1 calls, 1471 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [1 calls, 1801 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [1 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [1 calls, 827 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.25% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [1 calls, 830 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 2.25% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [1 calls, 2297 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.25% (13.36%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1430">ActionDispatch::Routing::Mapper::Resources#resources</a> [36 calls, 158 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.24% (98.76%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1700">ActionDispatch::Routing::Mapper::Resources#with_scope_level</a> [36 calls, 578 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.23% (99.08%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1707">ActionDispatch::Routing::Mapper::Resources#resource_scope</a> [36 calls, 164 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.22% (99.80%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=881">ActionDispatch::Routing::Mapper::Scoping#controller</a> [36 calls, 164 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.11% (11.88%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=692">ActionDispatch::Routing::Mapper::HttpHelpers#get</a> [106 calls, 542 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.11% (99.86%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=729">ActionDispatch::Routing::Mapper::HttpHelpers#map_method</a> [106 calls, 976 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.11% (99.33%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1569">ActionDispatch::Routing::Mapper::Resources#match</a> [106 calls, 999 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.04% (93.72%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1827">ActionDispatch::Routing::Mapper::Resources#map_match</a> [102 calls, 999 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.11% (40.80%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=30">Rails::Initializable::Initializer#run</a> [2 calls, 336 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.11% (99.96%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/application/routes_reloader.rb&line=31">Rails::Application::RoutesReloader#execute_if_updated</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 8.11% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/application/routes_reloader.rb&line=40">Rails::Application::RoutesReloader#updater</a> [1 calls, 1 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.92% (97.60%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/file_update_checker.rb&line=79">ActiveSupport::FileUpdateChecker#execute</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.92% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/application/routes_reloader.rb&line=17">Rails::Application::RoutesReloader#reload!</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.74% (97.76%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/application/routes_reloader.rb&line=55">Rails::Application::RoutesReloader#load_paths</a> [1 calls, 2 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.73% (99.95%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=285">ActiveSupport::Dependencies::Loadable#load</a> [1 calls, 332 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.54% (97.47%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [1 calls, 1801 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.54% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=53">Kernel#load</a> [1 calls, 664 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.54% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=53">Kernel#load</a> [1 calls, 664 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.52% (99.75%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/route_set.rb&line=417">ActionDispatch::Routing::RouteSet#draw</a> [1 calls, 10 total]</span>
+<ul style="display:none"><li class="color05" style="display:block"><a href="#" class="toggle plus" ></a><span> 7.52% (100.00%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/route_set.rb&line=432">ActionDispatch::Routing::RouteSet#eval_block</a> [1 calls, 13 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 4.29% (57.04%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1544">ActionDispatch::Routing::Mapper::Resources#namespace</a> [4 calls, 8 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 4.29% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=926">ActionDispatch::Routing::Mapper::Scoping#namespace</a> [4 calls, 8 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 4.29% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1820">ActionDispatch::Routing::Mapper::Resources#path_scope</a> [4 calls, 422 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 4.29% (99.97%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=822">ActionDispatch::Routing::Mapper::Scoping#scope</a> [4 calls, 26 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.67% (85.62%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1430">ActionDispatch::Routing::Mapper::Resources#resources</a> [33 calls, 158 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.66% (99.60%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1700">ActionDispatch::Routing::Mapper::Resources#with_scope_level</a> [33 calls, 578 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.64% (99.55%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1707">ActionDispatch::Routing::Mapper::Resources#resource_scope</a> [33 calls, 164 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 3.64% (99.93%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=881">ActionDispatch::Routing::Mapper::Scoping#controller</a> [33 calls, 164 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.28% (62.59%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1804">ActionDispatch::Routing::Mapper::Resources#set_member_mappings_for_resource</a> [33 calls, 164 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.28% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1495">ActionDispatch::Routing::Mapper::Resources#member</a> [33 calls, 178 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 2.27% (99.93%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1700">ActionDispatch::Routing::Mapper::Resources#with_scope_level</a> [33 calls, 578 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 2.26% (99.22%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1820">ActionDispatch::Routing::Mapper::Resources#path_scope</a> [33 calls, 422 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.25% (16.63%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1430">ActionDispatch::Routing::Mapper::Resources#resources</a> [36 calls, 158 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.23% (98.65%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1700">ActionDispatch::Routing::Mapper::Resources#with_scope_level</a> [36 calls, 578 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.22% (99.04%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1707">ActionDispatch::Routing::Mapper::Resources#resource_scope</a> [36 calls, 164 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.22% (99.78%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=881">ActionDispatch::Routing::Mapper::Scoping#controller</a> [36 calls, 164 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.16% (15.37%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=692">ActionDispatch::Routing::Mapper::HttpHelpers#get</a> [106 calls, 542 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.15% (99.87%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=729">ActionDispatch::Routing::Mapper::HttpHelpers#map_method</a> [106 calls, 976 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.15% (99.34%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1569">ActionDispatch::Routing::Mapper::Resources#match</a> [106 calls, 999 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.08% (94.12%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1827">ActionDispatch::Routing::Mapper::Resources#map_match</a> [102 calls, 999 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.03% (95.57%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1883">ActionDispatch::Routing::Mapper::Resources#decomposed_match</a> [102 calls, 1013 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.03% (99.73%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/actionpack-5.1.6.2/lib/action_dispatch/routing/mapper.rb&line=1898">ActionDispatch::Routing::Mapper::Resources#add_route</a> [102 calls, 999 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.97% (2.10%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [21 calls, 1471 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.97% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [21 calls, 1801 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.97% (99.95%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [21 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.97% (99.87%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [19 calls, 827 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.97% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [19 calls, 830 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.97% (99.82%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [19 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.79% (90.93%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [28 calls, 1471 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.79% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [28 calls, 1801 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.79% (99.93%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [28 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.78% (99.78%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [15 calls, 827 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.78% (99.99%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [15 calls, 830 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.78% (99.88%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [15 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.68% (94.39%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [55 calls, 1471 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.68% (99.95%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [55 calls, 1801 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.68% (99.86%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [55 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.67% (99.49%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [42 calls, 827 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.67% (99.97%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [42 calls, 830 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.66% (99.60%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [42 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.19% (71.46%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=293">ActiveSupport::Dependencies::Loadable#require</a> [119 calls, 1471 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.19% (99.83%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/activesupport-5.1.6.2/lib/active_support/dependencies.rb&line=255">ActiveSupport::Dependencies::Loadable#load_dependency</a> [119 calls, 1801 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.18% (99.58%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [119 calls, 2297 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.16% (98.31%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=21">Kernel#require_with_bootsnap_lfi</a> [105 calls, 827 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.16% (99.88%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/loaded_features_index.rb&line=95">Bootsnap::LoadPathCache::LoadedFeaturesIndex#register</a> [105 calls, 830 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.14% (98.54%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/bootsnap-1.4.2/lib/bootsnap/load_path_cache/core_ext/kernel_require.rb&line=27">Kernel#require</a> [105 calls, 2297 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.63% (1.66%) Method#call [102 calls, 2726 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.62% (99.85%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=48">Rails::Initializable::Collection#tsort_each_child</a> [102 calls, 336 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.73% (1.74%) Method#call [10 calls, 2726 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.73% (99.98%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=48">Rails::Initializable::Collection#tsort_each_child</a> [10 calls, 336 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.65% (95.41%) Method#call [23 calls, 2726 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.65% (99.97%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=48">Rails::Initializable::Collection#tsort_each_child</a> [23 calls, 336 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.50% (90.88%) Method#call [23 calls, 2726 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.50% (99.96%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=48">Rails::Initializable::Collection#tsort_each_child</a> [23 calls, 336 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle plus" ></a><span> 1.36% (90.64%) Method#call [23 calls, 2726 total]</span>
+<ul style="display:none"><li class="color01" style="display:block"><a href="#" class="toggle empty" ></a><span> 1.36% (99.95%) <a href="txmt://open?url=file:///Users/spajic/.rbenv/versions/2.6.1/lib/ruby/gems/2.6.0/gems/railties-5.1.6.2/lib/rails/initializable.rb&line=48">Rails::Initializable::Collection#tsort_each_child</a> [23 calls, 336 total]</span>
+<ul style="display:none"></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul></li></ul><div id="sentinel"></div></div></body></html>
